@@ -1,0 +1,575 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINGO - Le grand tirage</title>
+
+<style>
+:root {
+  --green: #3DA66C;
+  --yellow: #E5C64F;
+  --blue: #438FCB;
+  --purple: #9B78C5;
+  --orange: #E88A45;
+  --dark: #202124;
+  --panel: #292b30;
+  --muted: #aeb1b8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--dark);
+  color: white;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+h1 {
+  font-size: clamp(36px, 5vw, 64px);
+  letter-spacing: 7px;
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.remaining {
+  font-size: 20px;
+  color: var(--muted);
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(500px, 1.5fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 22px;
+}
+
+.current-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 570px;
+}
+
+.section-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 13px;
+  margin-bottom: 25px;
+}
+
+.ball {
+  width: min(320px, 75vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: white;
+  border: 22px solid var(--green);
+  outline: 7px solid white;
+  outline-offset: -34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #111;
+  box-shadow: 0 12px 35px #0005;
+  transition: border-color .2s;
+}
+
+.ball-letter {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.ball-number {
+  font-size: clamp(80px, 10vw, 130px);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.waiting {
+  font-size: 26px;
+  color: #777;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 35px;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.primary {
+  background: var(--green);
+  color: white;
+}
+
+.secondary {
+  background: #454850;
+  color: white;
+}
+
+.reset {
+  background: #783f45;
+  color: white;
+}
+
+.countdown {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 19px;
+  min-height: 25px;
+}
+
+.grid-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-title {
+  margin: 0 0 15px;
+  font-size: 18px;
+}
+
+.history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-height: 55px;
+  margin-bottom: 25px;
+}
+
+.history-ball {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #44464c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.history-ball small {
+  font-size: 11px;
+}
+
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.number-column {
+  display: grid;
+  grid-template-rows: 42px repeat(15, minmax(28px, 1fr));
+  gap: 4px;
+}
+
+.column-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.number-cell {
+  background: #393b41;
+  color: #d1d1d1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  font-size: clamp(14px, 1.5vw, 21px);
+  min-height: 28px;
+}
+
+.number-cell.called {
+  color: white;
+  background: var(--cell-color);
+  box-shadow: inset 0 0 0 2px #ffffff55;
+}
+
+.number-cell.latest {
+  outline: 3px solid white;
+  outline-offset: -3px;
+}
+
+footer {
+  text-align: center;
+  color: #777;
+  font-size: 13px;
+  margin-top: 20px;
+}
+
+@media (max-width: 850px) {
+  body { padding: 12px; }
+  main { grid-template-columns: 1fr; }
+  .current-panel { min-height: 440px; }
+  .number-column {
+    grid-template-rows: 35px repeat(15, 30px);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <h1>VINGO</h1>
+    <div class="subtitle">Le grand tirage</div>
+  </div>
+  <div class="remaining" id="remaining">75 restants</div>
+</header>
+
+<main>
+
+  <section class="panel current-panel">
+    <div class="section-label">Numéro appelé</div>
+
+    <div class="ball" id="ball">
+      <div class="waiting" id="waiting">Prêts ?</div>
+      <div class="ball-letter" id="currentLetter"></div>
+      <div class="ball-number" id="currentNumber"></div>
+    </div>
+
+    <div class="controls">
+      <button class="primary" id="drawButton" onclick="manualDraw()">
+        Tirer un numéro
+      </button>
+      <button class="secondary" id="autoButton" onclick="startAuto()">
+        ▶ Automatique
+      </button>
+      <button class="secondary" id="pauseButton" onclick="pauseAuto()" disabled>
+        Ⅱ Pause
+      </button>
+      <button class="reset" onclick="resetGame()">
+        ↻ Nouvelle partie
+      </button>
+    </div>
+
+    <div class="countdown" id="countdown">Mode manuel</div>
+  </section>
+
+  <section class="panel grid-panel">
+    <h2 class="history-title">Derniers numéros tirés</h2>
+    <div class="history" id="history">
+      <span style="color:#999">Aucun tirage pour le moment</span>
+    </div>
+
+    <h2 class="history-title">Grille des numéros</h2>
+    <div class="number-grid" id="numberGrid"></div>
+  </section>
+
+</main>
+
+<footer>VINGO · Bonne chance à toutes et à tous !</footer>
+
+<script>
+const columns = [
+  { letter: "V", start: 1, color: "#3DA66C" },
+  { letter: "I", start: 16, color: "#E5C64F" },
+  { letter: "N", start: 31, color: "#438FCB" },
+  { letter: "G", start: 46, color: "#9B78C5" },
+  { letter: "O", start: 61, color: "#E88A45" }
+];
+
+let available = [];
+let history = [];
+let currentTimer = null;
+let countdownInterval = null;
+let seconds = 10;
+let autoRunning = false;
+let autoPaused = false;
+
+function getColumn(number) {
+  return columns[Math.floor((number - 1) / 15)];
+}
+
+function buildGrid() {
+  const grid = document.getElementById("numberGrid");
+  grid.innerHTML = "";
+
+  columns.forEach(column => {
+    const col = document.createElement("div");
+    col.className = "number-column";
+
+    const heading = document.createElement("div");
+    heading.className = "column-heading";
+    heading.textContent = column.letter;
+    heading.style.background = column.color;
+    col.appendChild(heading);
+
+    for (let number = column.start; number < column.start + 15; number++) {
+      const cell = document.createElement("div");
+      cell.className = "number-cell";
+      cell.id = "cell-" + number;
+      cell.textContent = number;
+      col.appendChild(cell);
+    }
+
+    grid.appendChild(col);
+  });
+}
+
+function updateDisplay() {
+  document.getElementById("remaining").textContent =
+    available.length + " restants";
+
+  const historyContainer = document.getElementById("history");
+  historyContainer.innerHTML = "";
+
+  if (history.length === 0) {
+    historyContainer.innerHTML =
+      '<span style="color:#999">Aucun tirage pour le moment</span>';
+  } else {
+    history.slice(-10).reverse().forEach(number => {
+      const column = getColumn(number);
+      const item = document.createElement("div");
+      item.className = "history-ball";
+      item.style.background = column.color;
+      item.innerHTML =
+        "<small>" + column.letter + "</small>" + number;
+      historyContainer.appendChild(item);
+    });
+  }
+
+  document.querySelectorAll(".number-cell").forEach(cell => {
+    cell.classList.remove("latest");
+  });
+
+  history.forEach(number => {
+    const cell = document.getElementById("cell-" + number);
+    const column = getColumn(number);
+    cell.classList.add("called");
+    cell.style.setProperty("--cell-color", column.color);
+  });
+
+  if (history.length > 0) {
+    document.getElementById("cell-" + history[history.length - 1])
+      .classList.add("latest");
+  }
+}
+
+function drawNumber() {
+  if (available.length === 0) {
+    stopAuto();
+    document.getElementById("countdown").textContent =
+      "Tous les numéros ont été tirés !";
+    return;
+  }
+
+  const index = Math.floor(Math.random() * available.length);
+  const number = available.splice(index, 1)[0];
+  const column = getColumn(number);
+
+  history.push(number);
+
+  document.getElementById("waiting").style.display = "none";
+  document.getElementById("currentLetter").textContent = column.letter;
+  document.getElementById("currentNumber").textContent = number;
+  document.getElementById("ball").style.borderColor = column.color;
+
+  updateDisplay();
+
+  if (available.length === 0) {
+    stopAuto();
+    document.getElementById("countdown").textContent =
+      "Tous les numéros ont été tirés !";
+  }
+}
+
+function manualDraw() {
+  if (available.length === 0) return;
+
+  if (autoRunning) {
+    clearTimeout(currentTimer);
+    clearInterval(countdownInterval);
+  }
+
+  drawNumber();
+
+  if (autoRunning && !autoPaused && available.length > 0) {
+    seconds = 10;
+    showCountdown();
+
+    currentTimer = setTimeout(autoDraw, 10000);
+
+    countdownInterval = setInterval(() => {
+      seconds--;
+      showCountdown();
+    }, 1000);
+
+  } else if (autoPaused) {
+    document.getElementById("countdown").textContent =
+      "Tirage en pause";
+  }
+}
+
+function startAuto() {
+  if (available.length === 0) return;
+
+  if (autoRunning && autoPaused) {
+    resumeAuto();
+    return;
+  }
+
+  if (autoRunning) return;
+
+  autoRunning = true;
+  autoPaused = false;
+ document.getElementById("drawButton").disabled = false;
+  document.getElementById("autoButton").disabled = true;
+  document.getElementById("pauseButton").disabled = false;
+
+  seconds = 10;
+  showCountdown();
+  currentTimer = setTimeout(autoDraw, 10000);
+  countdownInterval = setInterval(() => {
+    seconds--;
+    showCountdown();
+  }, 1000);
+}
+
+function autoDraw() {
+  clearInterval(countdownInterval);
+  currentTimer = null;
+
+  if (!autoRunning || autoPaused) return;
+
+  drawNumber();
+
+  if (available.length > 0) {
+    seconds = 10;
+    showCountdown();
+    currentTimer = setTimeout(autoDraw, 10000);
+    countdownInterval = setInterval(() => {
+      seconds--;
+      showCountdown();
+    }, 1000);
+  }
+}
+
+function showCountdown() {
+  document.getElementById("countdown").textContent =
+    "Prochain tirage dans " + seconds + " s";
+}
+
+function pauseAuto() {
+  if (!autoRunning) return;
+
+  autoPaused = true;
+  clearTimeout(currentTimer);
+  clearInterval(countdownInterval);
+
+  document.getElementById("countdown").textContent =
+    "Tirage en pause";
+  document.getElementById("pauseButton").disabled = true;
+  document.getElementById("autoButton").disabled = false;
+  document.getElementById("autoButton").textContent = "▶ Reprendre";
+}
+
+function resumeAuto() {
+  autoPaused = false;
+  document.getElementById("pauseButton").disabled = false;
+  document.getElementById("autoButton").disabled = true;
+  document.getElementById("autoButton").textContent = "▶ Automatique";
+
+  showCountdown();
+  currentTimer = setTimeout(autoDraw, seconds * 1000);
+  countdownInterval = setInterval(() => {
+    seconds--;
+    showCountdown();
+  }, 1000);
+}
+
+function stopAuto() {
+  autoRunning = false;
+  autoPaused = false;
+  clearTimeout(currentTimer);
+  clearInterval(countdownInterval);
+
+  document.getElementById("drawButton").disabled = false;
+  document.getElementById("autoButton").disabled = false;
+  document.getElementById("pauseButton").disabled = true;
+  document.getElementById("autoButton").textContent = "▶ Automatique";
+}
+
+function resetGame() {
+  if (!confirm("Voulez-vous vraiment recommencer une nouvelle partie ?")) {
+    return;
+  }
+
+  stopAuto();
+
+  available = Array.from({length: 75}, (_, i) => i + 1);
+  history = [];
+
+  document.getElementById("waiting").style.display = "block";
+  document.getElementById("currentLetter").textContent = "";
+  document.getElementById("currentNumber").textContent = "";
+  document.getElementById("ball").style.borderColor = "#3DA66C";
+  document.getElementById("countdown").textContent = "Mode manuel";
+
+  document.querySelectorAll(".number-cell").forEach(cell => {
+    cell.classList.remove("called", "latest");
+    cell.style.removeProperty("--cell-color");
+  });
+
+  updateDisplay();
+}
+
+buildGrid();
+resetGameWithoutConfirmation();
+
+function resetGameWithoutConfirmation() {
+  available = Array.from({length: 75}, (_, i) => i + 1);
+  history = [];
+  updateDisplay();
+}
+</script>
+
+</body>
+</html>
