@@ -294,11 +294,6 @@ footer {
   </section>
 
   <section class="panel grid-panel">
-    <h2 class="history-title">Derniers numéros tirés</h2>
-    <div class="history" id="history">
-      <span style="color:#999">Aucun tirage pour le moment</span>
-    </div>
-
     <h2 class="history-title">Grille des numéros</h2>
     <div class="number-grid" id="numberGrid"></div>
   </section>
@@ -357,25 +352,6 @@ function buildGrid() {
 function updateDisplay() {
   document.getElementById("remaining").textContent =
     available.length + " restants";
-
-  const historyContainer = document.getElementById("history");
-  historyContainer.innerHTML = "";
-
-  if (history.length === 0) {
-    historyContainer.innerHTML =
-      '<span style="color:#999">Aucun tirage pour le moment</span>';
-  } else {
-    history.slice(-10).reverse().forEach(number => {
-      const column = getColumn(number);
-      const item = document.createElement("div");
-      item.className = "history-ball";
-      item.style.background = column.color;
-      item.innerHTML =
-        "<small>" + column.letter + "</small>" + number;
-      historyContainer.appendChild(item);
-    });
-  }
-
   document.querySelectorAll(".number-cell").forEach(cell => {
     cell.classList.remove("latest");
   });
